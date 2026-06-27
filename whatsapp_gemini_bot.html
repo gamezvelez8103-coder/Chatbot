@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Bot - Edición Verde Limón</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom Scrollbar for a sleek look */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #32CD32;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #28a428;
+        }
+        
+        /* Specific Lime Green color palette */
+        :root {
+            --lime-green: #32CD32;
+            --dark-bg: #000000;
+            --panel-bg: #0a0a0a;
+            --bubble-bot: #111111;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Message Bubbles Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message-animate {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        /* Typing Indicator dots */
+        .typing-dot {
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex items-center justify-center bg-zinc-900">
+
+    <div class="w-full h-full max-w-md bg-black flex flex-col shadow-2xl overflow-hidden relative border-x border-[#32CD32]/20 sm:h-[95vh] sm:rounded-3xl sm:border sm:border-[#32CD32]/50">
+        
+        <!-- Header -->
+        <header class="bg-[#0a0a0a] p-4 flex items-center gap-4 border-b border-[#32CD32]/30 z-10">
+            <div class="w-10 h-10 rounded-full bg-[#32CD32] flex items-center justify-center text-black font-bold text-xl flex-shrink-0 shadow-[0_0_10px_#32CD32]">
+                <i class="fa-brands fa-whatsapp"></i>
+            </div>
+            <div class="flex-1">
+                <h1 class="text-[#32CD32] font-semibold text-lg leading-tight">WA Bot Experto</h1>
+                <p class="text-[#32CD32]/70 text-xs flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-[#32CD32] animate-pulse"></span>
+                    en línea
+                </p>
+            </div>
+            <div class="flex gap-4 text-[#32CD32]">
+                <button id="toggleAudioBtn" class="hover:text-white transition-colors" title="Activar/Desactivar respuestas de voz" onclick="toggleAudioMode()">
+                    <i class="fa-solid fa-volume-xmark" id="audioIcon"></i>
+                </button>
+                <i class="fa-solid fa-ellipsis-vertical cursor-pointer"></i>
+            </div>
+        </header>
+
+        <!-- Chat Area -->
+        <main id="chatBox" class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 relative bg-black">
+            <!-- Background pattern optional, keeping it strictly black for contrast -->
+            
+            <!-- Welcome Message -->
+            <div class="flex flex-col max-w-[85%] self-start message-animate">
+                <div class="bg-[#111] border border-[#32CD32]/30 rounded-2xl rounded-tl-none p-3 shadow-[0_0_5px_rgba(50,205,50,0.1)]">
+                    <p class="text-[#32CD32] text-sm">
+                        ¡Hola! Soy tu asistente experto en WhatsApp. Conozco todos los trucos, significados, funciones e historia basados en la guía oficial. ¿En qué te puedo ayudar hoy? 🟢📱
+                    </p>
+                </div>
+                <span class="text-[10px] text-gray-500 mt-1 ml-1">Bot • Ahora</span>
+            </div>
+        </main>
+
+        <!-- Loading Indicator (Hidden by default) -->
+        <div id="typingIndicator" class="hidden px-4 pb-2">
+            <div class="bg-[#111] border border-[#32CD32]/30 rounded-2xl rounded-tl-none p-3 w-16 shadow-[0_0_5px_rgba(50,205,50,0.1)] flex justify-center gap-1">
+                <div class="w-2 h-2 bg-[#32CD32] rounded-full typing-dot"></div>
+                <div class="w-2 h-2 bg-[#32CD32] rounded-full typing-dot"></div>
+                <div class="w-2 h-2 bg-[#32CD32] rounded-full typing-dot"></div>
+            </div>
+        </div>
+
+        <!-- Image Preview Area (Hidden by default) -->
+        <div id="imagePreviewContainer" class="hidden absolute bottom-[70px] left-0 w-full bg-[#0a0a0a] border-t border-[#32CD32]/30 p-3 flex items-start gap-3 z-20">
+            <div class="relative">
+                <img id="imagePreview" src="" alt="Preview" class="h-20 w-20 object-cover rounded-lg border border-[#32CD32]">
+                <button onclick="clearImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="flex-1 text-[#32CD32] text-sm flex items-center h-20">
+                Imagen adjunta lista para enviar.
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <footer class="bg-[#0a0a0a] p-3 border-t border-[#32CD32]/30 flex items-end gap-2 z-10">
+            <div class="flex-1 bg-[#1a1a1a] rounded-2xl border border-[#32CD32]/50 flex items-end overflow-hidden focus-within:shadow-[0_0_8px_rgba(50,205,50,0.4)] transition-shadow">
+                
+                <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+                <button onclick="document.getElementById('imageInput').click()" class="p-3 text-[#32CD32] hover:text-white transition-colors">
+                    <i class="fa-solid fa-paperclip text-lg"></i>
+                </button>
+
+                <textarea id="messageInput" rows="1" class="flex-1 bg-transparent text-[#32CD32] placeholder-[#32CD32]/50 p-3 outline-none resize-none max-h-32" placeholder="Escribe un mensaje..." oninput="autoResize(this)" onkeydown="handleKeyPress(event)"></textarea>
+            </div>
+            
+            <button id="sendBtn" onclick="sendMessage()" class="w-12 h-12 rounded-full bg-[#32CD32] text-black flex items-center justify-center text-xl hover:bg-white transition-colors flex-shrink-0 shadow-[0_0_10px_#32CD32]">
+                <i class="fa-solid fa-paper-plane" style="margin-left: -2px;"></i>
+            </button>
+        </footer>
+    </div>
+
+    <script>
+        const apiKey = ""; // Leave empty for runtime injection
+        let isAudioMode = false;
+        let selectedImageBase64 = null;
+        let selectedImageMimeType = null;
+        
+        const chatBox = document.getElementById('chatBox');
+        const messageInput = document.getElementById('messageInput');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const audioIcon = document.getElementById('audioIcon');
+
+        // Conversation history for multi-turn
+        let chatHistory = [];
+
+        // The provided knowledge base as System Instruction
+        const systemPrompt = `Eres un chatbot experto en WhatsApp, diseñado específicamente para responder dudas de los usuarios basándote EXCLUSIVAMENTE en la siguiente "GUÍA COMPLETA DE WHATSAPP". 
+        Debes mantener un tono amable, conciso y directo, muy similar a una conversación de chat. Usa emojis moderadamente.
+        Si te preguntan sobre algo que no está en la guía, indica cortésmente que solo estás entrenado para responder con base en la información de tu base de datos sobre WhatsApp.
+
+        --- INICIO DE LA GUÍA ---
+        GUÍA COMPLETA DE WHATSAPP PARA ENTRENAR UN CHATBOT EN GEMINI
+        1. ¿Qué es WhatsApp?
+        WhatsApp es una aplicación de mensajería instantánea que permite comunicarse mediante mensajes, llamadas y videollamadas utilizando conexión a Internet.
+        2. Historia de WhatsApp
+        Creada en 2009 por Jan Koum y Brian Acton (extrabajadores de Yahoo). Actualmente pertenece a Meta Platforms.
+        3. Usuarios: Más de 2.000 millones. Popular junto con Telegram, Messenger y Signal.
+        4. Funciones principales: Mensajería (texto, reenviar, eliminar), Multimedia (fotos, videos, GIF, stickers, documentos, contactos, ubicación), Llamadas (voz, video individuales/grupales), Grupos, Estados, Canales, Comunidades.
+        5. Cómo utilizar: Crear cuenta (descargar, registrar número, SMS, perfil). Enviar mensaje. Enviar foto. Videollamada.
+        6. Símbolos: 
+        - Check gris: Mensaje enviado.
+        - Dos checks grises: Mensaje entregado.
+        - Dos checks azules: Mensaje leído.
+        - Reloj: No enviado aún.
+        - Micrófono: Grabar voz.
+        - Candado: Cifrado extremo a extremo.
+        7. Preguntas frecuentes: 
+        - ¿Por qué no llegan?: Sin internet, ahorro energía, desactualizada.
+        - "En línea": App abierta conectada.
+        - "Escribiendo...": Redactando.
+        - "Mensaje eliminado": Alguien lo borró.
+        8. Abreviaturas: TQM/TKM (Te quiero mucho), Tmb (También), Vrd (Verdad), Xq (Porque), Xfa (Por favor), Ntp (No te preocupes), Hla (Hola), Dnd (Dónde), Bn (Bien), Q (Que), K (Ok), Min (Mañana), Gpi (Gracias por invitar), ASAP (Lo antes posible), LOL (Reír mucho), OMG (Oh Dios mío), IDK (No lo sé), BRB (Vuelvo enseguida), AFK (Lejos del teclado).
+        9. Emojis: XD (Risa), <3 (Amor), etc.
+        10. Palabras de Internet: Spam (no deseado), Viral (muy compartido), Influencer, Trending, Hater, Stalkear, Fake, Link, Feed, Story, Post, DM, Meme, Bot.
+        11. Problemas comunes: No puedo enviar (revisar internet), No descargo fotos (almacenamiento), No escucho (volumen), App lenta (liberar espacio, reiniciar).
+        --- FIN DE LA GUÍA ---`;
+
+        function toggleAudioMode() {
+            isAudioMode = !isAudioMode;
+            if (isAudioMode) {
+                audioIcon.classList.remove('fa-volume-xmark');
+                audioIcon.classList.add('fa-volume-high');
+                audioIcon.classList.add('animate-pulse');
+            } else {
+                audioIcon.classList.add('fa-volume-xmark');
+                audioIcon.classList.remove('fa-volume-high');
+                audioIcon.classList.remove('animate-pulse');
+            }
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+            if(textarea.value === '') {
+                textarea.style.height = 'auto';
+            }
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedImageBase64 = e.target.result.split(',')[1];
+                    selectedImageMimeType = file.type;
+                    imagePreview.src = e.target.result;
+                    imagePreviewContainer.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+            event.target.value = ''; // Reset
+        }
+
+        function clearImage() {
+            selectedImageBase64 = null;
+            selectedImageMimeType = null;
+            imagePreview.src = '';
+            imagePreviewContainer.classList.add('hidden');
+        }
+
+        function addMessageToUI(role, text, imageSrc = null, audioUrl = null) {
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex flex-col max-w-[85%] message-animate ${role === 'user' ? 'self-end' : 'self-start'}`;
+
+            let contentHtml = '';
+            
+            // If message has image
+            if (imageSrc) {
+                contentHtml += `<img src="${imageSrc}" class="w-full rounded-lg mb-2 border border-black/20 object-cover max-h-60">`;
+            }
+
+            // The text content
+            if (text) {
+                // Convert simple markdown-like syntax or newlines if needed
+                let formattedText = text.replace(/\n/g, '<br>');
+                contentHtml += `<p class="text-sm break-words">${formattedText}</p>`;
+            }
+
+            // If message has audio (bot response)
+            if (audioUrl) {
+                contentHtml += `
+                    <div class="mt-2 w-full bg-black/20 rounded-full p-1 flex items-center">
+                        <audio controls class="w-full h-8 outline-none custom-audio">
+                            <source src="${audioUrl}" type="audio/wav">
+                        </audio>
+                    </div>`;
+            }
+
+            // Bubble styling based on role
+            if (role === 'user') {
+                msgDiv.innerHTML = `
+                    <div class="bg-[#32CD32] text-black rounded-2xl rounded-tr-none p-3 shadow-md border border-[#28a428]">
+                        ${contentHtml}
+                    </div>
+                    <span class="text-[10px] text-gray-500 mt-1 mr-1 text-right flex items-center justify-end gap-1">
+                        ${time} <i class="fa-solid fa-check-double text-[#32CD32]"></i>
+                    </span>
+                `;
+            } else {
+                msgDiv.innerHTML = `
+                    <div class="bg-[#111] border border-[#32CD32]/30 rounded-2xl rounded-tl-none p-3 shadow-[0_0_5px_rgba(50,205,50,0.1)] text-[#32CD32]">
+                        ${contentHtml}
+                    </div>
+                    <span class="text-[10px] text-gray-500 mt-1 ml-1">${time}</span>
+                `;
+            }
+
+            chatBox.appendChild(msgDiv);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const text = messageInput.value.trim();
+            const hasImage = selectedImageBase64 !== null;
+
+            if (!text && !hasImage) return;
+
+            // Render User Message
+            let imgSrc = null;
+            if (hasImage) {
+                imgSrc = `data:${selectedImageMimeType};base64,${selectedImageBase64}`;
+            }
+            addMessageToUI('user', text, imgSrc);
+
+            // Prepare Payload parts for Gemini Text/Vision model
+            let parts = [];
+            if (text) {
+                parts.push({ text: text });
+            } else {
+                parts.push({ text: "¿Qué ves en esta imagen relacionado a WhatsApp?" });
+            }
+
+            if (hasImage) {
+                parts.push({
+                    inlineData: {
+                        mimeType: selectedImageMimeType,
+                        data: selectedImageBase64
+                    }
+                });
+            }
+
+            // Add to Chat History (Simplified for Gemini context)
+            chatHistory.push({
+                role: "user",
+                parts: parts
+            });
+
+            // Cleanup Input UI
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            clearImage();
+            typingIndicator.classList.remove('hidden');
+            scrollToBottom();
+
+            // Call APIs
+            try {
+                // 1. Get Text Response from Gemini
+                const botTextResponse = await generateTextResponse();
+                
+                // Add bot response to history
+                chatHistory.push({
+                    role: "model",
+                    parts: [{ text: botTextResponse }]
+                });
+
+                // 2. Generate Audio if mode is enabled
+                let audioUrl = null;
+                if (isAudioMode) {
+                    audioUrl = await generateAudioTTS(botTextResponse);
+                }
+
+                typingIndicator.classList.add('hidden');
+                addMessageToUI('bot', botTextResponse, null, audioUrl);
+
+            } catch (error) {
+                console.error("Error:", error);
+                typingIndicator.classList.add('hidden');
+                addMessageToUI('bot', "Lo siento, ha ocurrido un error de conexión al procesar tu solicitud. ⚠️");
+            }
+        }
+
+        async function generateTextResponse() {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            
+            // To prevent massive payload, limit history slightly
+            const recentHistory = chatHistory.slice(-6);
+
+            const payload = {
+                contents: recentHistory,
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                }
+            };
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (result.candidates && result.candidates[0] && result.candidates[0].content) {
+                return result.candidates[0].content.parts[0].text;
+            } else {
+                throw new Error("Invalid response from text API");
+            }
+        }
+
+        async function generateAudioTTS(text) {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+            
+            // Clean text for TTS (remove emojis and markdown for better speech)
+            const cleanText = text.replace(/[\u{1F600}-\u{1F6FF}\u{1F300}-\u{1F5FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').replace(/\*/g, '');
+
+            const payload = {
+                contents: [{
+                    parts: [{ text: cleanText }]
+                }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: "Aoede" } // Easy-going, friendly voice
+                        }
+                    }
+                },
+                model: "gemini-2.5-flash-preview-tts"
+            };
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            const part = result?.candidates?.[0]?.content?.parts?.[0];
+            const audioData = part?.inlineData?.data;
+            const mimeType = part?.inlineData?.mimeType;
+
+            if (audioData && mimeType) {
+                // Extract sample rate from mimeType (e.g. audio/pcm;rate=24000)
+                let sampleRate = 24000; 
+                const rateMatch = mimeType.match(/rate=(\d+)/);
+                if (rateMatch) sampleRate = parseInt(rateMatch[1], 10);
+
+                const pcmData = base64ToArrayBuffer(audioData);
+                const pcm16 = new Int16Array(pcmData);
+                const wavBlob = pcmToWav(pcm16, sampleRate);
+                return URL.createObjectURL(wavBlob);
+            }
+            return null;
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binary_string = window.atob(base64);
+            const len = binary_string.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binary_string.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function pcmToWav(pcmData, sampleRate) {
+            const numChannels = 1;
+            const bitsPerSample = 16;
+            const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+            const blockAlign = numChannels * (bitsPerSample / 8);
+            const dataSize = pcmData.length * (bitsPerSample / 8);
+            const chunkSize = 36 + dataSize;
+            const buffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(buffer);
+
+            // RIFF chunk descriptor
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, chunkSize, true);
+            writeString(view, 8, 'WAVE');
+            // fmt sub-chunk
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, byteRate, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitsPerSample, true);
+            // data sub-chunk
+            writeString(view, 36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            // Write PCM data
+            let offset = 44;
+            for (let i = 0; i < pcmData.length; i++) {
+                view.setInt16(offset, pcmData[i], true);
+                offset += 2;
+            }
+
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+    </script>
+</body>
+</html>
